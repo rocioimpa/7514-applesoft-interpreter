@@ -1,6 +1,6 @@
 (require '[clojure.test :refer [is deftest run-tests]])
 
-(load-file "basic-a-completar.clj")
+(load-file "basic.clj")
 
 (deftest test-palabra-reservada?
    (is (= true (palabra-reservada? 'REM)))
@@ -11,6 +11,95 @@
    (is (= true (operador? '+)))
    (is (= true (operador? (symbol "+"))))
    (is (= false (operador? (symbol "%"))))
+)
+
+(deftest test-eliminar-cero-decimal
+   (is (= 1.5 (eliminar-cero-decimal 1.5)))
+   (is (= 1.5 (eliminar-cero-decimal 1.5)))
+   (is (= 1 (eliminar-cero-decimal 1.0)))
+   (is (= 'A (eliminar-cero-decimal 'A)))
+)
+
+(deftest test-eliminar-cero-entero
+   (is (= nil (eliminar-cero-entero nil)))
+   (is (= "A" (eliminar-cero-entero 'A)))
+   (is (= "0" (eliminar-cero-entero 0)))
+   (is (= "1.5" (eliminar-cero-entero 1.5)))
+   (is (= "1" (eliminar-cero-entero 1)))
+   (is (= "-1" (eliminar-cero-entero -1)))
+   (is (= "-1.5" (eliminar-cero-entero -1.5)))
+   (is (= ".5" (eliminar-cero-entero 0.5)))
+   (is (= "-.5" (eliminar-cero-entero -0.5)))
+)
+
+(deftest test-variable-float?
+   (is (= true (variable-float? 'X)))
+   (is (= false (variable-float? 'X%)))
+   (is (= false (variable-float? 'X$)))
+)
+
+(deftest test-variable-integer?
+   (is (= false (variable-integer? 'X)))
+   (is (= true (variable-integer? 'X%)))
+   (is (= false (variable-integer? 'X$)))
+)
+
+(deftest test-variable-string?
+   (is (= false (variable-string? 'X)))
+   (is (= false (variable-string? 'X%)))
+   (is (= true (variable-string? 'X$)))
+)
+
+(deftest test-anular-invalidos 
+
+)
+
+(deftest test-cargar-linea
+
+)
+
+(deftest test-expandir-nexts
+
+)
+
+(deftest test-dar-error 
+
+)
+
+(deftest test-contar-sentencias
+
+)
+
+(deftest test-buscar-lineas-restantes
+
+)
+
+(deftest test-continuar-linea
+
+)
+
+(deftest test-extraer-data
+
+)
+
+(deftest test-ejecutar-asignacion 
+
+)
+
+(deftest test-preprocesar-expresion
+
+)
+
+(deftest test-desambiguar
+
+)
+
+(deftest test-precedencia
+
+)
+
+(deftest test-aridad
+
 )
 
 (run-tests)

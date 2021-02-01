@@ -661,7 +661,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn palabra-reservada? [x]
-
+  (= x 'REM)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -675,7 +675,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn operador? [x]
-	()
+	(or (= x +) (= x (symbol "+")))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -734,7 +734,7 @@
 ; ?ERROR DISK FULL IN 100nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn dar-error [cod prog-ptrs]
-	(if (not (nil? (buscar-mensaje cod))) (print(buscar-mensaje cod)) false) 
+	(if (not (nil? (buscar-mensaje cod))) (print (buscar-mensaje cod)) false) 
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -947,8 +947,7 @@
 ; user=> (eliminar-cero-decimal 'A)
 ; A
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn eliminar-cero-decimal [n]
-)
+(defn eliminar-cero-decimal [n] (if (not (string? n)) n (if (not (integer? n)) (format "###.##" n) n)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-entero: recibe un simbolo y lo retorna convertido

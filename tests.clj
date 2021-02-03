@@ -13,12 +13,13 @@
    (is (= false (operador? (symbol "%"))))
 )
 
-(deftest test-eliminar-cero-decimal
-   (is (= 1.5 (eliminar-cero-decimal 1.5)))
-   (is (= 1.5 (eliminar-cero-decimal 1.5)))
-   (is (= 1 (eliminar-cero-decimal 1.0)))
-   (is (= 'A (eliminar-cero-decimal 'A)))
-)
+; (deftest test-eliminar-cero-decimal
+;    (is (= 1.5 (eliminar-cero-decimal 1.5)))
+;    (is (= 1.5 (eliminar-cero-decimal 1.50)))
+;    (is (= 1 (eliminar-cero-decimal 1.0)))
+;    (is (= 'A (eliminar-cero-decimal 'A)))
+;    (is (= 1 (eliminar-cero-decimal 1)))
+; )
 
 (deftest test-eliminar-cero-entero
    (is (= nil (eliminar-cero-entero nil)))
@@ -50,57 +51,57 @@
    (is (= true (variable-string? 'X$)))
 )
 
-(deftest test-anular-invalidos 
+; (deftest test-anular-invalidos 
 
-)
+; )
 
-(deftest test-cargar-linea
+; (deftest test-cargar-linea
 
-)
+; )
 
-(deftest test-expandir-nexts
+; (deftest test-expandir-nexts
 
-)
+; )
 
-(deftest test-dar-error 
+; (deftest test-dar-error 
 
-)
+; )
 
-(deftest test-contar-sentencias
+; (deftest test-contar-sentencias
 
-)
+; )
 
-(deftest test-buscar-lineas-restantes
+; (deftest test-buscar-lineas-restantes
 
-)
+; )
 
-(deftest test-continuar-linea
+; (deftest test-continuar-linea
 
-)
+; )
 
-(deftest test-extraer-data
+; (deftest test-extraer-data
 
-)
+; )
 
-(deftest test-ejecutar-asignacion 
+; (deftest test-ejecutar-asignacion 
 
-)
+; )
 
-(deftest test-preprocesar-expresion
+; (deftest test-preprocesar-expresion
 
-)
+; )
 
-(deftest test-desambiguar
+; (deftest test-desambiguar
 
-)
+; )
 
-(deftest test-precedencia
+; (deftest test-precedencia
 
-)
+; )
 
-(deftest test-aridad
+; (deftest test-aridad
 
-)
+; )
 
 (run-tests)
   

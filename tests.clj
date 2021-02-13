@@ -51,9 +51,9 @@
    (is (= true (variable-string? 'X$)))
 )
 
-; (deftest test-anular-invalidos 
-
-; )
+(deftest test-anular-invalidos 
+   (is (= '(IF X nil * Y < 12 THEN LET nil X = 0) (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0))))
+)
 
 ; (deftest test-cargar-linea
 
@@ -95,13 +95,20 @@
 
 ; )
 
-; (deftest test-precedencia
+(deftest test-precedencia
+   (is (= 1 (precedencia 'OR)))
+   (is (= 2 (precedencia 'AND)))
+   (is (= 6 (precedencia '*)))
+   (is (= 7 (precedencia '-u)))
+   (is (= 9 (precedencia 'MID$)))
+)
 
-; )
-
-; (deftest test-aridad
-
-; )
+(deftest test-aridad
+   (is (= 0 (aridad 'THEN)))
+   (is (= 1 (aridad 'SIN)))
+   (is (= 2 (aridad '*)))
+   (is (= 3 (aridad 'MID3$)))
+)
 
 (run-tests)
   

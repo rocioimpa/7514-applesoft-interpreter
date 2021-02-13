@@ -31,10 +31,10 @@
 
 (declare palabra-reservada?)              ; IMPLEMENTAR => LISTO
 (declare operador?)                       ; IMPLEMENTAR => LISTO
-(declare anular-invalidos)                ; IMPLEMENTAR
+(declare anular-invalidos)                ; IMPLEMENTAR => LISTO
 (declare cargar-linea)                    ; IMPLEMENTAR
 (declare expandir-nexts)                  ; IMPLEMENTAR
-(declare dar-error)                       ; IMPLEMENTAR
+(declare dar-error)                       ; IMPLEMENTAR => LISTO
 (declare variable-float?)                 ; IMPLEMENTAR => LISTO
 (declare variable-integer?)               ; IMPLEMENTAR => LISTO
 (declare variable-string?)                ; IMPLEMENTAR => LISTO
@@ -45,8 +45,8 @@
 (declare ejecutar-asignacion)             ; IMPLEMENTAR
 (declare preprocesar-expresion)           ; IMPLEMENTAR
 (declare desambiguar)                     ; IMPLEMENTAR
-(declare precedencia)                     ; IMPLEMENTAR
-(declare aridad)                          ; IMPLEMENTAR
+(declare precedencia)                     ; IMPLEMENTAR => LISTO (REVISAR)
+(declare aridad)                          ; IMPLEMENTAR => LISTO
 (declare eliminar-cero-decimal)           ; IMPLEMENTAR
 (declare eliminar-cero-entero)            ; IMPLEMENTAR => LISTO
 
@@ -686,7 +686,13 @@
 ; user=> (anular-invalidos '(IF X & * Y < 12 THEN LET ! X = 0))
 ; (IF X nil * Y < 12 THEN LET nil X = 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn simbolo-valido? [simbolo]   
+  (if (= (re-seq #"\"|\#|\&|\'|\{|\}|\[|\]|\_|\||\~|\%|\$|\:|\!" 
+    (str simbolo)) nil ) true false))
+
 (defn anular-invalidos [sentencia]
+  (map #(if (simbolo-valido? %) % nil) sentencia)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -736,7 +742,11 @@
 ; ?ERROR DISK FULL IN 100nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn dar-error [cod prog-ptrs]
-	(if (not (nil? (buscar-mensaje cod))) (print (buscar-mensaje cod)) false) 
+	(let [
+    error (if (not (nil? (buscar-mensaje cod))) (print (buscar-mensaje cod)) cod) 
+    linea (if (= :ejecucion-inmediata (first prog-ptrs)) "" (str " IN " (first prog-ptrs)))
+  ]
+  print (str error linea))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -904,6 +914,7 @@
 ; (MID3$ ( 1 , -u 2 + K , 3 ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn desambiguar [expr]
+
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -920,7 +931,25 @@
 ; user=> (precedencia 'MID$)
 ; 9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; Cada operador tiene asociado un número que determina cuál es su precedencia. 
+; A mayor valor de dicho número, mayor precedencia tendrá para realizarse antes que otras operaciones
+
+; REVISAR, NO ESTOY MUY SEGURA DEL ORDEN QUE ASIGNE
 (defn precedencia [token]
+  (cond 
+    (not= (re-seq #"," (str token)) nil) 0
+    (not= (re-seq #"OR" (str token)) nil) 1
+    (not= (re-seq #"AND" (str token)) nil) 2
+    (not= (re-seq #"\^" (str token)) nil) 3
+    (not= (re-seq #"\-u" (str token)) nil) 7
+    (not= (re-seq #"\+|\-" (str token)) nil) 5
+    (not= (re-seq #"\*|\/" (str token)) nil) 6
+    (not= (re-seq #"ATN|SIN|INT" (str token)) nil) 8
+    (not= (re-seq #"MID|MID\$3|LEN" (str token)) nil) 9
+    (not= (re-seq #"ASC|CHR\$|STR\$" (str token)) nil) 10
+    (not= (re-seq #"\=|\<\>|\<|\>|\<\=|\>\=" (str token)) nil) 11
+    :else 13)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -937,7 +966,28 @@
 ; user=> (aridad 'MID3$)
 ; 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn aridad-1? [x]
+  (if (not (= (re-seq #"ATN|INT|SIN|LEN|ASC|CHR\$|STR\$" 
+        (str x)) nil )) true false)
+)
+
+(defn aridad-2? [x]
+  (if (not (= (re-seq #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID" 
+        (str x)) nil )) true false)
+)
+
+(defn aridad-3? [x]
+  (if (not (= (re-seq #"MID3\$" 
+        (str x)) nil )) true false)
+)
+
 (defn aridad [token]
+  (if (aridad-3? token) 3 
+    (if (aridad-2? token) 2 
+      (if (aridad-1? token) 1 0)
+    )
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -953,6 +1003,9 @@
 ; A
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn eliminar-cero-decimal [n] 
+  ;; (if (or (float? n) (integer? n))
+  
+  ;; )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

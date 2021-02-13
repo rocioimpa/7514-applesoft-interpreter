@@ -47,7 +47,7 @@
 (declare desambiguar)                     ; IMPLEMENTAR
 (declare precedencia)                     ; IMPLEMENTAR => LISTO (REVISAR)
 (declare aridad)                          ; IMPLEMENTAR => LISTO
-(declare eliminar-cero-decimal)           ; IMPLEMENTAR
+(declare eliminar-cero-decimal)           ; IMPLEMENTAR => LISTO
 (declare eliminar-cero-entero)            ; IMPLEMENTAR => LISTO
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -652,6 +652,12 @@
 ; A PARTIR DE ESTE PUNTO HAY QUE IMPLEMENTAR LAS FUNCIONES DADAS ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; FUNCIONES AUXILIARES
+
+(defn matchea? [x regex]
+  (if (not= (re-seq regex (str x)) nil) true false) 
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; palabra-reservada?: predicado para determinar si un
 ; identificador es una palabra reservada, por ejemplo:
@@ -661,8 +667,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn palabra-reservada? [x]
-  (if (= (re-seq #"EXIT|ENV|DATA|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|INT|SIN|ATN|LEN|MID\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|TO|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT" 
-        (str x)) nil ) false true)
+  (matchea? x #"EXIT|ENV|DATA|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|INT|SIN|ATN|LEN|MID\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|TO|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT")
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -676,8 +681,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn operador? [x]
-  (if (= (re-seq #"AND|OR|\<\=|\>\=|\<\>|\<|\>|\=|\+|\-|\*|\/|\^" 
-        (str x)) nil ) false true)
+  (matchea? x #"AND|OR|\<\=|\>\=|\<\>|\<|\>|\=|\+|\-|\*|\/|\^")
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -886,6 +890,7 @@
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn ejecutar-asignacion [sentencia amb]
+
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -938,17 +943,17 @@
 ; REVISAR, NO ESTOY MUY SEGURA DEL ORDEN QUE ASIGNE
 (defn precedencia [token]
   (cond 
-    (not= (re-seq #"," (str token)) nil) 0
-    (not= (re-seq #"OR" (str token)) nil) 1
-    (not= (re-seq #"AND" (str token)) nil) 2
-    (not= (re-seq #"\^" (str token)) nil) 3
-    (not= (re-seq #"\-u" (str token)) nil) 7
-    (not= (re-seq #"\+|\-" (str token)) nil) 5
-    (not= (re-seq #"\*|\/" (str token)) nil) 6
-    (not= (re-seq #"ATN|SIN|INT" (str token)) nil) 8
-    (not= (re-seq #"MID|MID\$3|LEN" (str token)) nil) 9
-    (not= (re-seq #"ASC|CHR\$|STR\$" (str token)) nil) 10
-    (not= (re-seq #"\=|\<\>|\<|\>|\<\=|\>\=" (str token)) nil) 11
+    (matchea? token #",") 0
+    (matchea? token #"OR") 1
+    (matchea? token #"AND") 2
+    (matchea? token #"\^") 3
+    (matchea? token #"\-u") 7
+    (matchea? token #"\+|\-") 5
+    (matchea? token #"\*|\/") 6
+    (matchea? token #"ATN|SIN|INT") 8
+    (matchea? token #"MID|MID\$3|LEN") 9
+    (matchea? token #"ASC|CHR\$|STR\$") 10
+    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 11
     :else 13)
 )
 
@@ -968,18 +973,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn aridad-1? [x]
-  (if (not (= (re-seq #"ATN|INT|SIN|LEN|ASC|CHR\$|STR\$" 
-        (str x)) nil )) true false)
+  (matchea? x #"ATN|INT|SIN|LEN|ASC|CHR\$|STR\$")
 )
 
 (defn aridad-2? [x]
-  (if (not (= (re-seq #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID" 
-        (str x)) nil )) true false)
+  (matchea? x #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID")
 )
 
 (defn aridad-3? [x]
-  (if (not (= (re-seq #"MID3\$" 
-        (str x)) nil )) true false)
+  (matchea? x #"MID3\$")
 )
 
 (defn aridad [token]
@@ -1002,10 +1004,24 @@
 ; user=> (eliminar-cero-decimal 'A)
 ; A
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn parte-decimal [n]
+  (- n (int n))
+)
+
+(defn remover-cero-no-significativo [n]
+  (if (= (parte-decimal n) 0.0) 
+    (int n) 
+    (Double/parseDouble (str n))
+  )
+)
+
 (defn eliminar-cero-decimal [n] 
-  ;; (if (or (float? n) (integer? n))
-  
-  ;; )
+  (if (= "." (str n)) 0
+  (if (float? n)
+    (remover-cero-no-significativo n)
+    n
+  ))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

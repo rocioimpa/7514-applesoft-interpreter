@@ -13,13 +13,14 @@
    (is (= false (operador? (symbol "%"))))
 )
 
-; (deftest test-eliminar-cero-decimal
-;    (is (= 1.5 (eliminar-cero-decimal 1.5)))
-;    (is (= 1.5 (eliminar-cero-decimal 1.50)))
-;    (is (= 1 (eliminar-cero-decimal 1.0)))
-;    (is (= 'A (eliminar-cero-decimal 'A)))
-;    (is (= 1 (eliminar-cero-decimal 1)))
-; )
+(deftest test-eliminar-cero-decimal
+   (is (= 0 (eliminar-cero-decimal ".")))
+   (is (= 1.5 (eliminar-cero-decimal 1.5)))
+   (is (= 1.5 (eliminar-cero-decimal 1.50)))
+   (is (= 1 (eliminar-cero-decimal 1.0)))
+   (is (= 'A (eliminar-cero-decimal 'A)))
+   (is (= 1 (eliminar-cero-decimal 1)))
+)
 
 (deftest test-eliminar-cero-entero
    (is (= nil (eliminar-cero-entero nil)))

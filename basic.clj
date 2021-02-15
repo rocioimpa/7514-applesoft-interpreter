@@ -711,7 +711,23 @@
 ; user=> (cargar-linea '(15 (X = X - 1)) ['((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])
 ; [((10 (PRINT X)) (15 (X = X - 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn anterior? [linea1 linea2]
+    (< (first linea1) (first linea2))    
+)
+
+(defn posterior? [linea1 linea2]
+    (> (first linea1) (first linea2))    
+)
+
+(defn filtrar-lineas [filtro linea ambiente]
+  (filter (partial filtro linea) (first ambiente))
+)
+
 (defn cargar-linea [linea amb]
+   (vec (cons 
+          (concat (filtrar-lineas posterior? linea amb) (cons linea '()) (filtrar-lineas anterior? linea amb)) 
+          (rest amb)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -764,8 +780,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-float? [x]
-  (if (= (re-seq #"\$|\%" 
-        (str x)) nil ) true false)
+  (if (and (not (variable-integer? x)) (not (variable-string? x))) true false)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -779,8 +794,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-integer? [x]
-  (if (not (= (re-seq #"\%" 
-        (str x)) nil )) true false)
+  (if (clojure.string/ends-with? (str x) (str (symbol "%")) ) true false)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -794,8 +808,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-string? [x]
-  (if (not (= (re-seq #"\$" 
-        (str x)) nil )) true false)
+  (if (clojure.string/ends-with? (str x) (str (symbol "$")) ) true false)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -940,20 +953,33 @@
 ; Cada operador tiene asociado un número que determina cuál es su precedencia. 
 ; A mayor valor de dicho número, mayor precedencia tendrá para realizarse antes que otras operaciones
 
-; REVISAR, NO ESTOY MUY SEGURA DEL ORDEN QUE ASIGNE
+;;  Operators have the following precedence; things within the same
+;;  precedence level are evaluated left to right:
+;;    * Highest precedence: () [parentheses]
+;;    * ^ [exponentiation]
+;;    * - [unary minus]
+;;    * * [multiplication], / [division]
+;;    * + [addition], - [subtraction]
+;;    * = [equal], <> or >< [not equal], < [less than], > [greater than],
+;;      <= or =< [less than or equal], >= or => [greater than or equal]
+;;    * NOT [logical complement]
+;;    * AND [logical AND]
+;;    * Lowest precedence: OR [logical OR]
+
 (defn precedencia [token]
   (cond 
     (matchea? token #",") 0
     (matchea? token #"OR") 1
     (matchea? token #"AND") 2
-    (matchea? token #"\^") 3
+    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 3
+    (matchea? token #"\^") 8
     (matchea? token #"\-u") 7
     (matchea? token #"\+|\-") 5
     (matchea? token #"\*|\/") 6
-    (matchea? token #"ATN|SIN|INT") 8
+    (matchea? token #"ATN|SIN|INT") 10
     (matchea? token #"MID|MID\$3|LEN") 9
-    (matchea? token #"ASC|CHR\$|STR\$") 10
-    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 11
+    (matchea? token #"ASC|CHR\$|STR\$") 11
+    (matchea? token #"\(|\)=") 12
     :else 13)
 )
 

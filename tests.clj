@@ -63,17 +63,25 @@
    (is (= '[((10 (PRINT X)) (15 (X = X - 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}] (cargar-linea '(15 (X = X - 1)) ['((10 (PRINT X)) (15 (X = X + 1)) (20 (X = 100))) [:ejecucion-inmediata 0] [] [] [] 0 {}])))
 )
 
-; (deftest test-expandir-nexts
+(deftest test-expandir-nexts
+   (is (= '((PRINT 1) (NEXT A) (NEXT B)) (expandir-nexts (list '(PRINT 1) (list 'NEXT 'A (symbol ",") 'B))) ))
+   (is (= '((PRINT 1)) (expandir-nexts (list '(PRINT 1)))) )
+   (is (= '((NEXT A)) (expandir-nexts (list '(NEXT A))) ))
+   (is (= '((NEXT A) (NEXT B)) (expandir-nexts (list (list 'NEXT 'A (symbol ",") 'B))) ))
+)
 
-; )
+(deftest test-dar-error 
+   (is (= "?SYNTAX ERROR" (with-out-str (dar-error 16 [:ejecucion-inmediata 4]))))
+   (is (= "?ERROR DISK FULL" (with-out-str (dar-error "?ERROR DISK FULL" [:ejecucion-inmediata 4]))))
+   (is (= "?ERROR DISK FULL IN 100" (with-out-str (dar-error "?ERROR DISK FULL" [100 3]))))
+   (is (= "?SYNTAX ERROR IN 100" (with-out-str (dar-error 16 [100 3]))))
+)
 
-; (deftest test-dar-error 
-
-; )
-
-; (deftest test-contar-sentencias
-
-; )
+;; (deftest test-contar-sentencias
+;;    (is (= 2 (contar-sentencias 10 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+;;    (is (= 1 (contar-sentencias 15 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+;;    (is (= 2 (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+;; )
 
 ; (deftest test-buscar-lineas-restantes
 

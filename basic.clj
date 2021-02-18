@@ -32,8 +32,8 @@
 (declare palabra-reservada?)              ; IMPLEMENTAR => LISTO
 (declare operador?)                       ; IMPLEMENTAR => LISTO
 (declare anular-invalidos)                ; IMPLEMENTAR => LISTO
-(declare cargar-linea)                    ; IMPLEMENTAR
-(declare expandir-nexts)                  ; IMPLEMENTAR
+(declare cargar-linea)                    ; IMPLEMENTAR => LISTO
+(declare expandir-nexts)                  ; IMPLEMENTAR => LISTO
 (declare dar-error)                       ; IMPLEMENTAR => LISTO
 (declare variable-float?)                 ; IMPLEMENTAR => LISTO
 (declare variable-integer?)               ; IMPLEMENTAR => LISTO
@@ -741,7 +741,29 @@
 ; user=> (expandir-nexts n)
 ; ((PRINT 1) (NEXT A) (NEXT B))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn concatenar-next [arr]
+  (map #(list 'NEXT %) arr)
+)
+
+(defn es-next? [x]
+  (= "NEXT" (str (first x)))
+)
+
+(defn obtener-lista-nexts [nexts] 
+  (filter (fn [next] (not= (symbol ",") next)) (rest nexts))
+)
+
 (defn expandir-nexts [n]
+  (apply concat
+    (map (fn [elem]
+      (cond
+        (es-next? elem) (concatenar-next (obtener-lista-nexts elem))
+        :else (list elem)
+      )
+      ) n
+    )
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -761,12 +783,14 @@
 ;
 ; ?ERROR DISK FULL IN 100nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn dar-error [cod prog-ptrs]
 	(let [
-    error (if (not (nil? (buscar-mensaje cod))) (print (buscar-mensaje cod)) cod) 
-    linea (if (= :ejecucion-inmediata (first prog-ptrs)) "" (str " IN " (first prog-ptrs)))
+    ptr (first prog-ptrs)
+    linea (if (not= :ejecucion-inmediata ptr) (str " IN " ptr) "")
   ]
-  print (str error linea))
+  (print (str (buscar-mensaje cod) linea))
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -822,7 +846,9 @@
 ; user=> (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])
 ; 2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn contar-sentencias [nro-linea amb]
+
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -916,6 +942,7 @@
 ; (5 + 0 / 2 * 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn preprocesar-expresion [expr amb]
+
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

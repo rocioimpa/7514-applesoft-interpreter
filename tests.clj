@@ -77,11 +77,11 @@
    (is (= "?SYNTAX ERROR IN 100" (with-out-str (dar-error 16 [100 3]))))
 )
 
-;; (deftest test-contar-sentencias
-;;    (is (= 2 (contar-sentencias 10 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
-;;    (is (= 1 (contar-sentencias 15 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
-;;    (is (= 2 (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
-;; )
+(deftest test-contar-sentencias
+   (is (= 2 (contar-sentencias 10 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+   (is (= 1 (contar-sentencias 15 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+   (is (= 2 (contar-sentencias 20 [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [10 1] [] [] [] 0 {}])))
+)
 
 ; (deftest test-buscar-lineas-restantes
 
@@ -104,9 +104,12 @@
 
 ; )
 
-; (deftest test-desambiguar
-
-; )
+(deftest test-desambiguar
+   (is (= "(-u 2 * ( -u 3 + 5 - ( 2 / 7 ) ))" (str (desambiguar (list '- 2 '* (symbol "(") '- 3 '+ 5 '- (symbol "(") '+ 2 '/ 7 (symbol ")") (symbol ")"))))))
+   (is (= "(MID$ ( 1 , 2 ))" (str (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") 2 (symbol ")"))))))
+   (is (= "(MID3$ ( 1 , 2 , 3 ))" (str (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") 2 (symbol ",") 3 (symbol ")"))))))
+   (is (= "(MID3$ ( 1 , -u 2 + K , 3 ))" (str (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") '- 2 '+ 'K (symbol ",") 3 (symbol ")"))))))
+)
 
 (deftest test-precedencia
    (is (= 1 (precedencia 'OR)))

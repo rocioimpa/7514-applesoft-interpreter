@@ -38,14 +38,14 @@
 (declare variable-float?)                 ; IMPLEMENTAR => LISTO
 (declare variable-integer?)               ; IMPLEMENTAR => LISTO
 (declare variable-string?)                ; IMPLEMENTAR => LISTO
-(declare contar-sentencias)               ; IMPLEMENTAR
+(declare contar-sentencias)               ; IMPLEMENTAR => LISTO
 (declare buscar-lineas-restantes)         ; IMPLEMENTAR
 (declare continuar-linea)                 ; IMPLEMENTAR
 (declare extraer-data)                    ; IMPLEMENTAR => LISTO
 (declare ejecutar-asignacion)             ; IMPLEMENTAR
 (declare preprocesar-expresion)           ; IMPLEMENTAR
-(declare desambiguar)                     ; IMPLEMENTAR
-(declare precedencia)                     ; IMPLEMENTAR => LISTO (REVISAR)
+(declare desambiguar)                     ; IMPLEMENTAR => LISTO
+(declare precedencia)                     ; IMPLEMENTAR => LISTO
 (declare aridad)                          ; IMPLEMENTAR => LISTO
 (declare eliminar-cero-decimal)           ; IMPLEMENTAR => LISTO
 (declare eliminar-cero-entero)            ; IMPLEMENTAR => LISTO
@@ -847,8 +847,16 @@
 ; 2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn contar-sentencias [nro-linea amb]
+(defn buscar-linea [num amb]
+  (let [arr (first amb)]
+  (filter (fn [linea]
+    (= (first linea) num)
+  ) arr)
+  )
+)
 
+(defn contar-sentencias [nro-linea amb]
+  (count (expandir-nexts (rest (first (buscar-linea nro-linea amb)))))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -914,6 +922,11 @@
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn dar-formato [arg]
+  (map (fn [x] 
+    (if (not (number? x)) (str x) x)) arg)
+)
+
 (defn es-array? [sentencia]
   (clojure.string/includes? (str (rest sentencia)) ",")
 )
@@ -934,11 +947,6 @@
 
 (defn filtrar-no-data [sentencia]
   (filter (fn [keyword] (= (first keyword) 'DATA) ) sentencia)
-)
-
-(defn dar-formato [arg]
-  (map (fn [x] 
-    (if (not (number? x)) (str x) x)) arg)
 )
 
 (defn extraer-data [prg]
@@ -991,8 +999,9 @@
 ; user=> (desambiguar (list 'MID$ (symbol "(") 1 (symbol ",") '- 2 '+ 'K (symbol ",") 3 (symbol ")")))
 ; (MID3$ ( 1 , -u 2 + K , 3 ))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn desambiguar [expr]
 
+(defn desambiguar [expr]
+  ((comp desambiguar-mid desambiguar-mas-menos) expr)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

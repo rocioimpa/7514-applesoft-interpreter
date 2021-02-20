@@ -41,7 +41,7 @@
 (declare contar-sentencias)               ; IMPLEMENTAR
 (declare buscar-lineas-restantes)         ; IMPLEMENTAR
 (declare continuar-linea)                 ; IMPLEMENTAR
-(declare extraer-data)                    ; IMPLEMENTAR
+(declare extraer-data)                    ; IMPLEMENTAR => LISTO
 (declare ejecutar-asignacion)             ; IMPLEMENTAR
 (declare preprocesar-expresion)           ; IMPLEMENTAR
 (declare desambiguar)                     ; IMPLEMENTAR
@@ -658,6 +658,10 @@
   (if (not= (re-seq regex (str x)) nil) true false) 
 )
 
+(defn es? [x valor-buscado]
+  (= valor-buscado (str (first x)))
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; palabra-reservada?: predicado para determinar si un
 ; identificador es una palabra reservada, por ejemplo:
@@ -746,10 +750,6 @@
   (map #(list 'NEXT %) arr)
 )
 
-(defn es-next? [x]
-  (= "NEXT" (str (first x)))
-)
-
 (defn obtener-lista-nexts [nexts] 
   (filter (fn [next] (not= (symbol ",") next)) (rest nexts))
 )
@@ -758,7 +758,7 @@
   (apply concat
     (map (fn [elem]
       (cond
-        (es-next? elem) (concatenar-next (obtener-lista-nexts elem))
+        (es? elem "NEXT") (concatenar-next (obtener-lista-nexts elem))
         :else (list elem)
       )
       ) n
@@ -901,6 +901,7 @@
 ; [:omitir-restante [((10 (PRINT X)) (15 (GOSUB 100) (X = X + 1)) (20 (NEXT I , J))) [15 1] [] [] [] 0 {}]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn continuar-linea [amb]
+  
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -912,7 +913,39 @@
 ; user=> (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn es-array? [sentencia]
+  (clojure.string/includes? (str (rest sentencia)) ",")
+)
+
+(defn parsear-array [sentencia]
+  (filter (fn [sentencia] (not= (symbol ",") sentencia)) sentencia)
+)
+
+(defn obtener-datas [sentencia] 
+  (let [dato (first sentencia)]
+    (if (es-array? dato) (dar-formato (parsear-array (rest dato))) (dar-formato (rest dato)))
+  )
+)
+
+(defn ignorar-rems [linea]
+  (take-while (fn [sentencia] (not= (first sentencia) 'REM)) (rest linea))
+)
+
+(defn filtrar-no-data [sentencia]
+  (filter (fn [keyword] (= (first keyword) 'DATA) ) sentencia)
+)
+
+(defn dar-formato [arg]
+  (map (fn [x] 
+    (if (not (number? x)) (str x) x)) arg)
+)
+
 (defn extraer-data [prg]
+  (apply concat
+    (map (fn [elem]
+      (obtener-datas (filtrar-no-data (ignorar-rems elem)))
+  ) prg))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -40,7 +40,7 @@
 (declare variable-string?)                ; IMPLEMENTAR => LISTO
 (declare contar-sentencias)               ; IMPLEMENTAR => LISTO
 (declare buscar-lineas-restantes)         ; IMPLEMENTAR
-(declare continuar-linea)                 ; IMPLEMENTAR => LISTO (FALLAN TESTS)
+(declare continuar-linea)                 ; IMPLEMENTAR => LISTO
 (declare extraer-data)                    ; IMPLEMENTAR => LISTO
 (declare ejecutar-asignacion)             ; IMPLEMENTAR
 (declare preprocesar-expresion)           ; IMPLEMENTAR

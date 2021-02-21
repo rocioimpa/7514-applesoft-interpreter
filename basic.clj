@@ -40,7 +40,7 @@
 (declare variable-string?)                ; IMPLEMENTAR => LISTO
 (declare contar-sentencias)               ; IMPLEMENTAR => LISTO
 (declare buscar-lineas-restantes)         ; IMPLEMENTAR
-(declare continuar-linea)                 ; IMPLEMENTAR
+(declare continuar-linea)                 ; IMPLEMENTAR => LISTO (FALLAN TESTS)
 (declare extraer-data)                    ; IMPLEMENTAR => LISTO
 (declare ejecutar-asignacion)             ; IMPLEMENTAR
 (declare preprocesar-expresion)           ; IMPLEMENTAR
@@ -908,8 +908,20 @@
 ; user=> (continuar-linea [(list '(10 (PRINT X)) '(15 (GOSUB 100) (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [20 3] [[15 2]] [] [] 0 {}])
 ; [:omitir-restante [((10 (PRINT X)) (15 (GOSUB 100) (X = X + 1)) (20 (NEXT I , J))) [15 1] [] [] [] 0 {}]]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn obtener-siguiente-linea [amb]
+  (let [resultado (first (first (get amb 2)))
+       amb-actualizado (- (second (first (get amb 2))) 1) 
+    ]
+    [:omitir-restante [(get amb 0) [resultado amb-actualizado] (pop (get amb 2)) (get amb 3) (get amb 4) (get amb 5) (get amb 6)]]
+  )
+)
+
 (defn continuar-linea [amb]
-  
+  (if (empty? (get amb 2))
+    (do (dar-error 22 (second amb)) [nil amb])
+    (obtener-siguiente-linea amb)
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

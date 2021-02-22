@@ -42,8 +42,8 @@
 (declare buscar-lineas-restantes)         ; IMPLEMENTAR
 (declare continuar-linea)                 ; IMPLEMENTAR => LISTO
 (declare extraer-data)                    ; IMPLEMENTAR => LISTO
-(declare ejecutar-asignacion)             ; IMPLEMENTAR
-(declare preprocesar-expresion)           ; IMPLEMENTAR
+(declare ejecutar-asignacion)             ; IMPLEMENTAR => LISTO
+(declare preprocesar-expresion)           ; IMPLEMENTAR => LISTO
 (declare desambiguar)                     ; IMPLEMENTAR => LISTO
 (declare precedencia)                     ; IMPLEMENTAR => LISTO
 (declare aridad)                          ; IMPLEMENTAR => LISTO
@@ -662,6 +662,15 @@
   (= valor-buscado (str (first x)))
 )
 
+(defn variable? [x]
+    (and
+        (not (nil? x))
+        (not (palabra-reservada? x))
+        (not (number? x))
+        (some? (re-matches #"[A-Z][A-Z0-9]*[$|%]?" (str x)))
+    )
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; palabra-reservada?: predicado para determinar si un
 ; identificador es una palabra reservada, por ejemplo:
@@ -981,8 +990,22 @@
 ; user=> (ejecutar-asignacion '(X$ = X$ + " MUNDO") ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X$ "HOLA"}])
 ; [((10 (PRINT X))) [10 1] [] [] [] 0 {X$ "HOLA MUNDO"}]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn ejecutar-asignacion [sentencia amb]
 
+(defn reemplazar-por-nuevo-valor [sen amb]
+  (let [var (first sen) val (last sen)]
+  (assoc amb 6 (hash-map var val)))
+)
+
+(defn reemplazar-por-expresion-calculada [sen amb]
+  (let [var (first sen) val (calcular-expresion (rest (rest sen)) amb)]
+  (assoc amb 6 (assoc (last amb) var val)))
+)
+
+(defn ejecutar-asignacion [sentencia amb]
+  (if (empty? (last amb))
+    (reemplazar-por-nuevo-valor sentencia amb)
+    (reemplazar-por-expresion-calculada sentencia amb)
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -994,8 +1017,25 @@
 ; user=> (preprocesar-expresion '(X + . / Y% * Z) ['((10 (PRINT X))) [10 1] [] [] [] 0 '{X 5 Y% 2}])
 ; (5 + 0 / 2 * 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn preprocesar-expresion [expr amb]
 
+(defn reemplazar-variables [elem mapa] 
+  (cond
+    (contains? mapa elem) (get mapa elem)
+    (variable-string? elem) ""
+    (variable? elem) 0
+    (variable-float? elem) (eliminar-cero-decimal elem)
+    (variable-integer? elem) 0
+    :else elem
+  )
+)
+
+(defn preprocesar-expresion [expr amb]
+  (if (empty? (last amb)) expr
+    (concat (map (fn [elem-expresion]
+      (let [variables (last amb)]
+      (reemplazar-variables elem-expresion variables))
+    ) expr ))
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

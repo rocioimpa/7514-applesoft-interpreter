@@ -598,6 +598,11 @@
         NEXT (if (<= (count (next sentencia)) 1)
                  (retornar-al-for amb (fnext sentencia))
                   (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
+        RESTORE (assoc amb 5 0)
+        CLEAR (assoc amb 6 {})
+        LIST (mostrar-listado (first amb))
+        LEN (count sentencia)
+        LET (evaluar (rest sentencia) amb)
         (if (= (second sentencia) '=)
             (let [resu (ejecutar-asignacion sentencia amb)]
                  (if (nil? resu)
@@ -633,6 +638,25 @@
                 (str operando1 operando2)
                 (+ operando1 operando2))
           / (if (= operando2 0) (dar-error 133 nro-linea) (/ operando1 operando2))  ; Division by zero error
+          * (if (and (string? operando1) (string? operando2))
+                (str operando1 operando2)
+                (* operando1 operando2))
+          <> (if (and (string? operando1) (string? operando2))
+                (dar-error 163 nro-linea)
+                (distinct? operando1 operando2))
+          > (if (and (string? operando1) (string? operando2))
+                (dar-error 163 nro-linea)
+                (> operando1 operando2))
+          >= (if (and (string? operando1) (string? operando2))
+                (dar-error 163 nro-linea)
+                (>= operando1 operando2))
+          < (if (and (string? operando1) (string? operando2))
+                (dar-error 163 nro-linea)
+                (< operando1 operando2))
+          <= (if (and (string? operando1) (string? operando2))
+                (dar-error 163 nro-linea)
+                (<= operando1 operando2))
+          OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (or (not= op1 0) (not= op2 0)) 1 0))
           AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) 1 0))
           MID$ (if (< operando2 1)
                    (dar-error 53 nro-linea)  ; Illegal quantity error
@@ -900,10 +924,42 @@
 ; user=> (buscar-lineas-restantes [(list '(10 (PRINT X) (PRINT Y)) '(15 (X = X + 1)) (list 20 (list 'NEXT 'I (symbol ",") 'J))) [25 0] [] [] [] 0 {}])
 ; nil
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn buscar-linea-en-ejecucion [linea-buscada prg]
+  (filter (fn [linea]
+    (= (first linea) linea-buscada)) prg
+  )
+)
+
+(defn existe-linea? [prg numero-buscado]
+  (< 0 (count (buscar-linea-en-ejecucion numero-buscado prg)))
+)
+
+(defn devolver-nil? [act prg]
+  (and (or (empty? prg) (keyword? (first act)) (not (existe-linea? prg (first act)))))
+)
+
+(defn buscar-lineas-pendientes [linea-buscada prg]
+  (filter (fn [linea]
+    (> (first linea) linea-buscada)) prg
+  )
+)
+
+(defn devolver-lineas [linea-ejecucion cantidad-restantes prg]
+  (let [sentencias-en-ejec (take-last cantidad-restantes (expandir-nexts (rest (first (buscar-linea-en-ejecucion linea-ejecucion prg)))))
+        lineas-pendientes (buscar-lineas-pendientes linea-ejecucion prg)]
+  (cons (concat (list linea-ejecucion) sentencias-en-ejec) lineas-pendientes)   
+  )
+)
+
 (defn buscar-lineas-restantes
   ([amb] (buscar-lineas-restantes (amb 1) (amb 0)))
   ([act prg]
+    (if (devolver-nil? act prg)
+      nil
+      (devolver-lineas (first act) (second act) prg)
     )
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1070,22 +1126,6 @@
 ; user=> (precedencia 'MID$)
 ; 9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; Cada operador tiene asociado un número que determina cuál es su precedencia. 
-; A mayor valor de dicho número, mayor precedencia tendrá para realizarse antes que otras operaciones
-
-;;  Operators have the following precedence; things within the same
-;;  precedence level are evaluated left to right:
-;;    * Highest precedence: () [parentheses]
-;;    * ^ [exponentiation]
-;;    * - [unary minus]
-;;    * * [multiplication], / [division]
-;;    * + [addition], - [subtraction]
-;;    * = [equal], <> or >< [not equal], < [less than], > [greater than],
-;;      <= or =< [less than or equal], >= or => [greater than or equal]
-;;    * NOT [logical complement]
-;;    * AND [logical AND]
-;;    * Lowest precedence: OR [logical OR]
 
 (defn precedencia [token]
   (cond 

@@ -39,7 +39,7 @@
 (declare variable-integer?)               ; IMPLEMENTAR => LISTO
 (declare variable-string?)                ; IMPLEMENTAR => LISTO
 (declare contar-sentencias)               ; IMPLEMENTAR => LISTO
-(declare buscar-lineas-restantes)         ; IMPLEMENTAR
+(declare buscar-lineas-restantes)         ; IMPLEMENTAR => LISTO
 (declare continuar-linea)                 ; IMPLEMENTAR => LISTO
 (declare extraer-data)                    ; IMPLEMENTAR => LISTO
 (declare ejecutar-asignacion)             ; IMPLEMENTAR => LISTO
@@ -599,7 +599,9 @@
                  (retornar-al-for amb (fnext sentencia))
                   (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
         RESTORE (assoc amb 5 0)
-        CLEAR (assoc amb 6 {})
+        CLEAR (if (not= (count sentencia) 1)
+                  (dar-error 16 (first (amb 1))) 
+                  [:sin-errores [(amb 0) (amb 1) (amb 2) (amb 3) (amb 4) 0 (hash-map)]])
         LIST (mostrar-listado (first amb))
         LEN (count sentencia)
         LET (evaluar (rest sentencia) amb)
@@ -704,7 +706,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn palabra-reservada? [x]
-  (matchea? x #"EXIT|ENV|DATA|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|INT|SIN|ATN|LEN|MID\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|TO|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT")
+  (matchea? x #"EXIT|ENV|DATA|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|INT|SIN|ATN|LEN|MID\$|MID3\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT|OR|AND")
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -790,13 +792,9 @@
 (defn expandir-nexts [n]
   (apply concat
     (map (fn [elem]
-      (cond
-        (es? elem "NEXT") (concatenar-next (obtener-lista-nexts elem))
-        :else (list elem)
-      )
-      ) n
-    )
-  )
+      (if (es? elem "NEXT") 
+      (concatenar-next (obtener-lista-nexts elem))
+      (list elem))) n))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -837,7 +835,16 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-float? [x]
-  (if (and (not (variable-integer? x)) (not (variable-string? x))) true false)
+  (cond
+    (number? x) false
+    (string? x) false
+    (clojure.string/ends-with? (str x) (str (symbol "%"))) false
+    (clojure.string/ends-with? (str x) (str (symbol "$"))) false
+    (= (symbol ";") x) false
+    (operador? x) false
+    (palabra-reservada? x) false
+    :else true
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -999,38 +1006,37 @@
 ; ("HOLA" "MUNDO" 10 20)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn dar-formato [arg]
-  (map (fn [x] 
-    (if (not (number? x)) (str x) x)) arg)
+(defn separar [x]
+  (filter (fn [dato] (not= (symbol ",") dato)) x)
 )
 
-(defn es-array? [sentencia]
-  (clojure.string/includes? (str (rest sentencia)) ",")
+(defn dar-formato [x]
+  (map (fn [dato]
+    (if (not (number? dato)) (str dato) dato)) x)
 )
 
-(defn parsear-array [sentencia]
-  (filter (fn [sentencia] (not= (symbol ",") sentencia)) sentencia)
+(defn obtener-datos [x]
+  (map (fn [dato]
+    (separar (rest (first x)))
+  )x)
 )
 
-(defn obtener-datas [sentencia] 
-  (let [dato (first sentencia)]
-    (if (es-array? dato) (dar-formato (parsear-array (rest dato))) (dar-formato (rest dato)))
-  )
+(defn obtener-campos-data [sentencia]
+  (filter (fn [keyword] (= (str (first keyword)) "DATA") ) sentencia)
 )
 
 (defn ignorar-rems [linea]
   (take-while (fn [sentencia] (not= (first sentencia) 'REM)) (rest linea))
 )
 
-(defn filtrar-no-data [sentencia]
-  (filter (fn [keyword] (= (first keyword) 'DATA) ) sentencia)
-)
-
 (defn extraer-data [prg]
-  (apply concat
-    (map (fn [elem]
-      (obtener-datas (filtrar-no-data (ignorar-rems elem)))
-  ) prg))
+  (if (empty? (first prg)) (list '())
+  (let [resultados
+    (apply concat
+      (map (fn [linea] 
+        (first (obtener-datos (obtener-campos-data (ignorar-rems linea))))
+      ) prg))]
+  (list (dar-formato resultados))))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1109,7 +1115,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn desambiguar [expr]
-  ((comp desambiguar-mid desambiguar-mas-menos) expr)
+  (->> expr
+    (desambiguar-mas-menos)
+    (desambiguar-mid)
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1129,19 +1138,17 @@
 
 (defn precedencia [token]
   (cond 
-    (matchea? token #",") 0
     (matchea? token #"OR") 1
     (matchea? token #"AND") 2
-    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 3
-    (matchea? token #"\^") 8
+    (matchea? token #"NOT") 3
+    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 4
     (matchea? token #"\-u") 7
     (matchea? token #"\+|\-") 5
     (matchea? token #"\*|\/") 6
-    (matchea? token #"ATN|SIN|INT") 10
-    (matchea? token #"MID|MID\$3|LEN") 9
-    (matchea? token #"ASC|CHR\$|STR\$") 11
-    (matchea? token #"\(|\)=") 12
-    :else 13)
+    (matchea? token #"\^") 8   
+    (or (palabra-reservada? token) (number? token) (string? token)) 9
+    (matchea? token #"\(|\)=") nil
+    :else 0)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1160,11 +1167,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn aridad-1? [x]
-  (matchea? x #"ATN|INT|SIN|LEN|ASC|CHR\$|STR\$")
+  (matchea? x #"NOT|ATN|INT|SIN|LEN|-u|ASC|CHR\$|STR\$|LOAD|SAVE|REM|LET|PRINT|GOTO|GOSUB|IF|ON|ASC|CHR\$|STR\$")
 )
 
 (defn aridad-2? [x]
-  (matchea? x #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID")
+  (matchea? x #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID\$")
 )
 
 (defn aridad-3? [x]
@@ -1172,10 +1179,11 @@
 )
 
 (defn aridad [token]
-  (if (aridad-3? token) 3 
-    (if (aridad-2? token) 2 
-      (if (aridad-1? token) 1 0)
-    )
+  (cond
+    (aridad-3? token) 3 
+    (aridad-2? token) 2 
+    (aridad-1? token) 1 
+    :else 0
   )
 )
 

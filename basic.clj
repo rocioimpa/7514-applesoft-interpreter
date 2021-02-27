@@ -605,6 +605,7 @@
         LIST (mostrar-listado (first amb))
         LEN (count sentencia)
         LET (evaluar (rest sentencia) amb)
+        END [nil amb]
         (if (= (second sentencia) '=)
             (let [resu (ejecutar-asignacion sentencia amb)]
                  (if (nil? resu)
@@ -626,7 +627,11 @@
           -u (- operando)
           LEN (count operando)
           STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
-          CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando)))))) ; Illegal quantity error
+          CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error
+          INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando))
+          ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando))) ;revisar
+          SIN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/sin operando))
+          ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)))))
   ([operador operando1 operando2 nro-linea]
     (if (or (nil? operando1) (nil? operando2))
         (dar-error 16 nro-linea)  ; Syntax error
@@ -639,25 +644,27 @@
           + (if (and (string? operando1) (string? operando2))
                 (str operando1 operando2)
                 (+ operando1 operando2))
+          - (if (and (number? operando1) (number? operando2))
+                (- operando1 operando2)
+                (dar-error 163 nro-linea))
           / (if (= operando2 0) (dar-error 133 nro-linea) (/ operando1 operando2))  ; Division by zero error
-          * (if (and (string? operando1) (string? operando2))
-                (str operando1 operando2)
+          * (if (and (number? operando1) (number? operando2))
                 (* operando1 operando2))
           <> (if (and (string? operando1) (string? operando2))
-                (dar-error 163 nro-linea)
-                (distinct? operando1 operando2))
-          > (if (and (string? operando1) (string? operando2))
-                (dar-error 163 nro-linea)
-                (> operando1 operando2))
-          >= (if (and (string? operando1) (string? operando2))
-                (dar-error 163 nro-linea)
-                (>= operando1 operando2))
-          < (if (and (string? operando1) (string? operando2))
-                (dar-error 163 nro-linea)
-                (< operando1 operando2))
-          <= (if (and (string? operando1) (string? operando2))
-                (dar-error 163 nro-linea)
-                (<= operando1 operando2))
+                (if (distinct? operando1 operando2) 1 0)
+                (if (distinct? (+ 0 operando1) (+ 0 operando2)) 1 0))
+          > (if (and (number? operando1) (number? operando2))
+                (if (> operando1 operando2) 1 0)
+                (dar-error 163 nro-linea))
+          >= (if (and (number? operando1) (number? operando2))
+                (if (>= operando1 operando2) 1 0)
+                (dar-error 163 nro-linea))
+          < (if (and (number? operando1) (number? operando2))
+                (if (< operando1 operando2) 1 0)
+                (dar-error 163 nro-linea))
+          <= (if (and (number? operando1) (number? operando2))
+                (if (<= operando1 operando2) 1 0)
+                (dar-error 163 nro-linea))
           OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (or (not= op1 0) (not= op2 0)) 1 0))
           AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) 1 0))
           MID$ (if (< operando2 1)
@@ -706,7 +713,10 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn palabra-reservada? [x]
-  (matchea? x #"EXIT|ENV|DATA|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|INT|SIN|ATN|LEN|MID\$|MID3\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT|OR|AND")
+  (let [palabras-reservadas (list 'EXIT 'ENV 'DATA 'REM 'NEW 'CLEAR 'LIST 'RUN 'LOAD 'SAVE 'LET 'INT 'SIN 'ATN 'LEN 
+                                  'MID$ 'MID3$ 'STR$ 'CHR$ 'ASC 'GOTO 'ON 'IF 'THEN 'FOR 'STEP 'NEXT 'GOSUB 'RETURN 
+                                  'END 'INPUT 'READ 'RESTORE 'PRINT 'OR 'AND)]
+  (if (some (partial = x) palabras-reservadas) true false))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -720,7 +730,8 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn operador? [x]
-  (matchea? x #"AND|OR|\<\=|\>\=|\<\>|\<|\>|\=|\+|\-|\*|\/|\^")
+  (let [operadores (list 'AND 'OR '<= '>= '< '> '= '<> '+ '- '* '/ '? (symbol "^"))]
+  (if (some (partial = x) operadores) true false))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -730,12 +741,24 @@
 ; (IF X nil * Y < 12 THEN LET nil X = 0)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn simbolo-valido? [simbolo]   
-  (if (= (re-seq #"\"|\#|\&|\'|\{|\}|\[|\]|\_|\||\~|\%|\$|\:|\!" 
-    (str simbolo)) nil ) true false))
+(defn es-valido? [simbolo]  
+  (let [simbolos-validos (list (symbol ".") (symbol ",") (symbol ";") (symbol "(") (symbol ")"))]
+  (if (or
+    (some (partial = simbolo) simbolos-validos) 
+    (number? simbolo) 
+    (string? simbolo) 
+    (operador? simbolo) 
+    (palabra-reservada? simbolo) 
+    (variable-float? simbolo) 
+    (variable-integer? simbolo) 
+    (variable-string? simbolo))
+    true
+    false 
+  ))
+)  
 
 (defn anular-invalidos [sentencia]
-  (map #(if (simbolo-valido? %) % nil) sentencia)
+  (map #(if (es-valido? %) % nil) sentencia)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -835,17 +858,19 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-float? [x]
+  (let [simbolos (list (symbol ";") (symbol ",") (symbol "&") (symbol "!") (symbol "(") (symbol ")"))]
   (cond
+    (nil? x) false
     (number? x) false
     (string? x) false
     (clojure.string/ends-with? (str x) (str (symbol "%"))) false
     (clojure.string/ends-with? (str x) (str (symbol "$"))) false
-    (= (symbol ";") x) false
+    (some (partial = x) simbolos) false
     (operador? x) false
     (palabra-reservada? x) false
     :else true
+  ))
   )
-)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-integer?: predicado para determinar si un identificador
@@ -858,7 +883,10 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-integer? [x]
-  (if (clojure.string/ends-with? (str x) (str (symbol "%")) ) true false)
+  (if (or (palabra-reservada? x) (operador? x)) 
+    false 
+    (if (clojure.string/ends-with? (str x) (str (symbol "%")) )
+    true false))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -872,7 +900,10 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn variable-string? [x]
-  (if (clojure.string/ends-with? (str x) (str (symbol "$")) ) true false)
+  (if (or (palabra-reservada? x) (operador? x)) 
+    false 
+    (if (clojure.string/ends-with? (str x) (str (symbol "$")) )
+    true false))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1082,11 +1113,12 @@
 
 (defn reemplazar-variables [elem mapa] 
   (cond
+    (operador? elem) elem
+    (palabra-reservada? elem) elem
     (contains? mapa elem) (get mapa elem)
-    (variable-string? elem) ""
-    (variable? elem) 0
-    (variable-float? elem) (eliminar-cero-decimal elem)
-    (variable-integer? elem) 0
+    (and (not (contains? mapa elem)) (variable-string? elem)) ""
+    (and (not (contains? mapa elem)) (or (variable-integer? elem) (variable-float? elem))) 0
+    (= "." (str elem)) 0
     :else elem
   )
 )
@@ -1136,19 +1168,27 @@
 ; 9
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn is-present? [token list] 
+  (if (some (partial = token) list) true false)
+)
+
 (defn precedencia [token]
+  (let [precedencia-4 (list '= '<> '< '> '<= '>=)
+        precedencia-5 (list '+ '-) 
+        precedencia-6 (list '* '/)
+        precedencia-nil (list (symbol "(") (symbol ")"))]
   (cond 
-    (matchea? token #"OR") 1
-    (matchea? token #"AND") 2
-    (matchea? token #"NOT") 3
-    (matchea? token #"\=|\<\>|\<|\>|\<\=|\>\=") 4
-    (matchea? token #"\-u") 7
-    (matchea? token #"\+|\-") 5
-    (matchea? token #"\*|\/") 6
-    (matchea? token #"\^") 8   
+    (= token 'OR) 1
+    (= token 'AND) 2
+    (= token 'NOT) 3
+    (is-present? token precedencia-4) 4
+    (= token '-u) 7
+    (is-present? token precedencia-5) 5
+    (is-present? token precedencia-6) 6
+    (= token (symbol "^")) 8   
     (or (palabra-reservada? token) (number? token) (string? token)) 9
-    (matchea? token #"\(|\)=") nil
-    :else 0)
+    (is-present? token precedencia-nil) nil
+    :else 0))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

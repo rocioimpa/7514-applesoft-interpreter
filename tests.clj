@@ -67,6 +67,7 @@
    (is (= (list '(PRINT 1)) (expandir-nexts (list '(PRINT 1)))) )
    (is (= (list '(NEXT A)) (expandir-nexts (list '(NEXT A))) ))
    (is (= (list '(NEXT A) '(NEXT B)) (expandir-nexts (list (list 'NEXT 'A (symbol ",") 'B))) ))
+   (is (= (list '(NEXT)) (expandir-nexts (list '(NEXT) )) ))
 )
 
 (deftest test-dar-error 

@@ -797,7 +797,11 @@
   (apply concat
     (map (fn [elem]
       (if (= (first elem) 'NEXT) 
-      (concatenar-next (obtener-lista-nexts elem))
+      (let [lista-nexts (obtener-lista-nexts elem)]
+        (if (> (count lista-nexts) 0)
+          (concatenar-next (obtener-lista-nexts elem))
+          (list '(NEXT)))
+      )
       (list elem))) n))
 )
 
@@ -1096,6 +1100,7 @@
   (cond
     (operador? elem) elem
     (palabra-reservada? elem) elem
+    (and (contains? mapa elem) (variable-string? elem)) (str (get mapa elem))
     (contains? mapa elem) (get mapa elem)
     (and (not (contains? mapa elem)) (variable-string? elem)) ""
     (and (not (contains? mapa elem)) (or (variable-integer? elem) (variable-float? elem))) 0
@@ -1159,6 +1164,8 @@
         precedencia-6 (list '* '/)
         precedencia-nil (list (symbol "(") (symbol ")"))]
   (cond 
+    (is-present? token precedencia-nil) nil
+    (= token (symbol ",")) 0
     (= token 'OR) 1
     (= token 'AND) 2
     (= token 'NOT) 3
@@ -1167,9 +1174,7 @@
     (is-present? token precedencia-5) 5
     (is-present? token precedencia-6) 6
     (= token (symbol "^")) 8   
-    (or (palabra-reservada? token) (number? token) (string? token)) 9
-    (is-present? token precedencia-nil) nil
-    :else 0))
+    :else 9))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1265,6 +1270,7 @@
 
 (defn eliminar-cero-entero [n]
   (cond
+    (nil? n) nil
     (string? n) n
     (integer? n) (str n)
     (and (symbol? n) (or (variable-integer? n) (variable-float? n) (variable-string? n))) (str n)

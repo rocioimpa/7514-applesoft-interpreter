@@ -625,7 +625,7 @@
         (dar-error 16 nro-linea)  ; Syntax error
         (case operador
           -u (- operando)
-          LEN (count operando)
+          LEN (if (string? operando) (count operando) (count (str operando)))
           STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
           CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error
           INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando))
@@ -1222,6 +1222,10 @@
   )
 )
 
+(defn fraction? [n]
+  (clojure.string/includes? (str n) "/")
+)
+
 (defn eliminar-cero-decimal [n]
   (cond
     (nil? n) nil
@@ -1229,6 +1233,7 @@
     (string? n) n
     (float? n) (remover-cero-no-significativo n)
     (integer? n) n
+    (fraction? n) (float n)
     (zero? n) 0
     :else n
   )

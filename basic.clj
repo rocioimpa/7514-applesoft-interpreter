@@ -604,7 +604,6 @@
                   (dar-error 16 (first (amb 1))) 
                   [:sin-errores [(amb 0) (amb 1) (amb 2) (amb 3) (amb 4) 0 (hash-map)]])
         LIST (mostrar-listado (first amb))
-        LEN (count sentencia)
         LET (evaluar (rest sentencia) amb)
         END [nil amb]
         (if (= (second sentencia) '=)
@@ -630,7 +629,7 @@
           STR$ (if (not (number? operando)) (dar-error 163 nro-linea) (eliminar-cero-entero operando)) ; Type mismatch error
           CHR$ (if (or (< operando 0) (> operando 255)) (dar-error 53 nro-linea) (str (char operando))) ; Illegal quantity error
           INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando))
-          ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando))) ;revisar
+          ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando)))
           SIN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/sin operando))
           ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)))))
   ([operador operando1 operando2 nro-linea]
@@ -652,8 +651,8 @@
           * (if (and (number? operando1) (number? operando2))
                 (* operando1 operando2))
           <> (if (and (string? operando1) (string? operando2))
-                (if (distinct? operando1 operando2) 1 0)
-                (if (distinct? (+ 0 operando1) (+ 0 operando2)) 1 0))
+                (if (not= operando1 operando2) 1 0)
+                (if (not= (+ 0 operando1) (+ 0 operando2)) 1 0))
           > (if (and (number? operando1) (number? operando2))
                 (if (> operando1 operando2) 1 0)
                 (dar-error 163 nro-linea))
@@ -858,7 +857,7 @@
     (palabra-reservada? x) false
     :else true
   ))
-  )
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; variable-integer?: predicado para determinar si un identificador
@@ -1194,26 +1193,16 @@
 ; 3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn aridad-1? [x]
-  (matchea? x #"NOT|ATN|INT|SIN|LEN|-u|ASC|CHR\$|STR\$|LOAD|SAVE|REM|LET|PRINT|GOTO|GOSUB|IF|ON|ASC|CHR\$|STR\$")
-)
-
-(defn aridad-2? [x]
-  (matchea? x #"\+|\-|\*|\/|\^|\=|\<\>|\<|\>|\<\=|\>\=|AND|OR|MID\$")
-)
-
-(defn aridad-3? [x]
-  (matchea? x #"MID3\$")
-)
-
 (defn aridad [token]
+  (let [aridad-1 (list 'NOT '-u 'LOAD 'SAVE 'PRINT 'REM 'LET 'GOSUB 'GOTO 'IF 'ON 'ATN 'INT 'SIN 'LEN 'ASC 'CHR$ 'STR$)
+        aridad-2 (list 'OR 'AND (symbol "^") 'MID$)
+        aridad-3 (list 'MID3$)]
   (cond
-    (aridad-3? token) 3 
-    (aridad-2? token) 2 
-    (aridad-1? token) 1 
-    :else 0
-  )
-)
+    (is-present? token aridad-1) 1
+    (is-present? token aridad-2) 2
+    (is-present? token aridad-3) 3
+    (operador? token) 2
+    :else 0 )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; eliminar-cero-decimal: recibe un numero y lo retorna sin ceros
@@ -1239,12 +1228,16 @@
   )
 )
 
-(defn eliminar-cero-decimal [n] 
-  (if (= "." (str n)) 0
-  (if (float? n)
-    (remover-cero-no-significativo n)
-    n
-  ))
+(defn eliminar-cero-decimal [n]
+  (cond
+    (nil? n) nil
+    (and (symbol? n) (or (variable-integer? n) (variable-float? n) (variable-string? n))) n
+    (string? n) n
+    (float? n) (remover-cero-no-significativo n)
+    (integer? n) n
+    (zero? n) 0
+    :else n
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1270,9 +1263,15 @@
 ; user=> (eliminar-cero-entero -0.5)
 ; "-.5"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn eliminar-cero-entero [n]
-  (if (nil? n) nil
-  (if (symbol? n) (str n) (if (zero? n) (str n) (clojure.string/replace (str n) "0" ""))))
+  (cond
+    (string? n) n
+    (integer? n) (str n)
+    (and (symbol? n) (or (variable-integer? n) (variable-float? n) (variable-string? n))) (str n)
+    (and (float? n) (= (int n) 0)) (clojure.string/replace (str n) "0." ".")
+    :else (str n) 
+  )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

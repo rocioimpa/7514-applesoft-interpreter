@@ -733,9 +733,7 @@
     (variable-float? simbolo) 
     (variable-integer? simbolo) 
     (variable-string? simbolo))
-    true
-    false 
-  ))
+    true false))
 )  
 
 (defn anular-invalidos [sentencia]
@@ -769,8 +767,8 @@
 
 (defn cargar-linea [linea amb]
    (vec (cons 
-          (concat (filtrar-lineas posterior? linea amb) (cons linea '()) (filtrar-lineas anterior? linea amb)) 
-          (rest amb)))
+      (concat (filtrar-lineas posterior? linea amb) (cons linea '()) (filtrar-lineas anterior? linea amb)) 
+      (rest amb)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -826,10 +824,8 @@
 (defn dar-error [cod prog-ptrs]
 	(let [
     ptr (first prog-ptrs)
-    linea (if (not= :ejecucion-inmediata ptr) (str " IN " ptr) "")
-  ]
-  (print (str (buscar-mensaje cod) linea))
-  )
+    linea (if (not= :ejecucion-inmediata ptr) (str " IN " ptr) "")]
+  (print (str (buscar-mensaje cod) linea)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -853,8 +849,7 @@
     (some (partial = x) simbolos) false
     (operador? x) false
     (palabra-reservada? x) false
-    :else true
-  ))
+    :else true))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -907,8 +902,7 @@
   (let [arr (first amb)]
   (filter (fn [linea]
     (= (first linea) num)
-  ) arr)
-  )
+  ) arr))
 )
 
 (defn contar-sentencias [nro-linea amb]
@@ -949,9 +943,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn buscar-linea-en-ejecucion [linea-buscada prg]
-  (filter (fn [linea]
-    (= (first linea) linea-buscada)) prg
-  )
+  (filter (fn [linea] (= (first linea) linea-buscada)) prg)
 )
 
 (defn existe-linea? [prg numero-buscado]
@@ -963,16 +955,13 @@
 )
 
 (defn buscar-lineas-pendientes [linea-buscada prg]
-  (filter (fn [linea]
-    (> (first linea) linea-buscada)) prg
-  )
+  (filter (fn [linea] (> (first linea) linea-buscada)) prg)
 )
 
-(defn devolver-lineas [linea-ejecucion cantidad-restantes prg]
+(defn get-restantes [linea-ejecucion cantidad-restantes prg]
   (let [sentencias-en-ejec (take-last cantidad-restantes (expandir-nexts (rest (first (buscar-linea-en-ejecucion linea-ejecucion prg)))))
         lineas-pendientes (buscar-lineas-pendientes linea-ejecucion prg)]
-  (cons (concat (list linea-ejecucion) sentencias-en-ejec) lineas-pendientes)   
-  )
+  (cons (concat (list linea-ejecucion) sentencias-en-ejec) lineas-pendientes))
 )
 
 (defn buscar-lineas-restantes
@@ -980,9 +969,7 @@
   ([act prg]
     (if (devolver-nil? act prg)
       nil
-      (devolver-lineas (first act) (second act) prg)
-    )
-  )
+      (get-restantes (first act) (second act) prg)))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1001,15 +988,13 @@
   (let [resultado (first (first (get amb 2)))
        amb-actualizado (- (second (first (get amb 2))) 1) 
     ]
-    [:omitir-restante [(get amb 0) [resultado amb-actualizado] (pop (get amb 2)) (get amb 3) (get amb 4) (get amb 5) (get amb 6)]]
-  )
+    [:omitir-restante [(get amb 0) [resultado amb-actualizado] (pop (get amb 2)) (get amb 3) (get amb 4) (get amb 5) (get amb 6)]])
 )
 
 (defn continuar-linea [amb]
   (if (empty? (get amb 2))
     (do (dar-error 22 (second amb)) [nil amb])
-    (obtener-siguiente-linea amb)
-  )
+    (obtener-siguiente-linea amb))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1033,8 +1018,7 @@
 
 (defn obtener-datos [x]
   (map (fn [dato]
-    (separar (rest (first x)))
-  )x)
+    (separar (rest (first x)))) x)
 )
 
 (defn obtener-campos-data [sentencia]
@@ -1082,8 +1066,7 @@
 (defn ejecutar-asignacion [sentencia amb]
   (if (empty? (last amb))
     (reemplazar-por-nuevo-valor sentencia amb)
-    (reemplazar-por-expresion-calculada sentencia amb)
-  )
+    (reemplazar-por-expresion-calculada sentencia amb))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1105,8 +1088,7 @@
     (and (not (contains? mapa elem)) (variable-string? elem)) ""
     (and (not (contains? mapa elem)) (or (variable-integer? elem) (variable-float? elem))) 0
     (= "." (str elem)) 0
-    :else elem
-  )
+    :else elem)
 )
 
 (defn preprocesar-expresion [expr amb]
@@ -1114,8 +1096,7 @@
     (concat (map (fn [elem-expresion]
       (let [variables (last amb)]
       (reemplazar-variables elem-expresion variables))
-    ) expr ))
-  )
+    ) expr )))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1135,8 +1116,7 @@
 (defn desambiguar [expr]
   (->> expr
     (desambiguar-mas-menos)
-    (desambiguar-mid)
-  )
+    (desambiguar-mid))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1223,8 +1203,7 @@
 (defn remover-cero-no-significativo [n]
   (if (= (parte-decimal n) 0.0) 
     (int n) 
-    (Double/parseDouble (str n))
-  )
+    (Double/parseDouble (str n)))
 )
 
 (defn fraction? [n]
@@ -1240,8 +1219,7 @@
     (integer? n) n
     (fraction? n) (float n)
     (zero? n) 0
-    :else n
-  )
+    :else n)
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1275,8 +1253,7 @@
     (integer? n) (str n)
     (and (symbol? n) (or (variable-integer? n) (variable-float? n) (variable-string? n))) (str n)
     (and (float? n) (= (int n) 0)) (clojure.string/replace (str n) "0." ".")
-    :else (str n) 
-  )
+    :else (str n))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

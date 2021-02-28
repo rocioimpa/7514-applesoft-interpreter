@@ -598,7 +598,8 @@
         NEXT (if (<= (count (next sentencia)) 1)
                  (retornar-al-for amb (fnext sentencia))
                   (do (dar-error 16 (amb 1)) [nil amb]))  ; Syntax error
-        RESTORE (assoc amb 5 0)
+        READ (leer-data (rest sentencia) amb)
+        RESTORE [:sin-errores (assoc amb 5 0)]
         CLEAR (if (not= (count sentencia) 1)
                   (dar-error 16 (first (amb 1))) 
                   [:sin-errores [(amb 0) (amb 1) (amb 2) (amb 3) (amb 4) 0 (hash-map)]])
@@ -665,7 +666,7 @@
           <= (if (and (number? operando1) (number? operando2))
                 (if (<= operando1 operando2) 1 0)
                 (dar-error 163 nro-linea))
-          OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (or (not= op1 0) (not= op2 0)) 1 0))
+          OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (not (and (not= op1 0) (not= op2 0))) 0 1))
           AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) 1 0))
           MID$ (if (< operando2 1)
                    (dar-error 53 nro-linea)  ; Illegal quantity error
@@ -689,19 +690,6 @@
 
 (defn matchea? [x regex]
   (if (not= (re-seq regex (str x)) nil) true false) 
-)
-
-(defn es? [x valor-buscado]
-  (= valor-buscado (str (first x)))
-)
-
-(defn variable? [x]
-    (and
-        (not (nil? x))
-        (not (palabra-reservada? x))
-        (not (number? x))
-        (some? (re-matches #"[A-Z][A-Z0-9]*[$|%]?" (str x)))
-    )
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -815,7 +803,7 @@
 (defn expandir-nexts [n]
   (apply concat
     (map (fn [elem]
-      (if (es? elem "NEXT") 
+      (if (= (first elem) 'NEXT) 
       (concatenar-next (obtener-lista-nexts elem))
       (list elem))) n))
 )
@@ -1067,7 +1055,7 @@
       (map (fn [linea] 
         (first (obtener-datos (obtener-campos-data (ignorar-rems linea))))
       ) prg))]
-  (list (dar-formato resultados))))
+  (vec (dar-formato resultados))))
 )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

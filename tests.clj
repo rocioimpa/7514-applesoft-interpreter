@@ -109,7 +109,7 @@
 
 (deftest test-extraer-data
    (is (= (list '()) (extraer-data '(()))))
-   (is (= (list '("HOLA" "MUNDO" 10 20)) (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))))
+   (is (= '("HOLA" "MUNDO" 10 20) (extraer-data (list '(10 (PRINT X) (REM ESTE NO) (DATA 30)) '(20 (DATA HOLA)) (list 100 (list 'DATA 'MUNDO (symbol ",") 10 (symbol ",") 20))))))
 )
 
 (deftest test-ejecutar-asignacion 

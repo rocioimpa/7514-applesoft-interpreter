@@ -685,12 +685,6 @@
 ; A PARTIR DE ESTE PUNTO HAY QUE IMPLEMENTAR LAS FUNCIONES DADAS ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; FUNCIONES AUXILIARES
-
-(defn matchea? [x regex]
-  (if (not= (re-seq regex (str x)) nil) true false) 
-)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; palabra-reservada?: predicado para determinar si un
 ; identificador es una palabra reservada, por ejemplo:

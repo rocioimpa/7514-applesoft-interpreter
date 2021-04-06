@@ -99,7 +99,7 @@
         pre-rem (subs mayu 0 (if (nil? ini-rem) (count mayu) ini-rem)),
         pos-rem (subs mayu (if (nil? ini-rem) (- (count mayu) 1) (+ ini-rem 3)) (- (count mayu) 1)),
         sin-rem (->> pre-rem
-                    (re-seq #"EXIT|ENV|DATA[^\:]*?\:|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|AND|OR|INT|SIN|ATN|LEN|MID\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|TO|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT|\<\=|\>\=|\<\>|\<|\>|\=|\(|\)|\?|\;|\:|\,|\+|\-|\*|\/|\^|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|[A-Z][A-Z0-9]*[\%\$]?|[A-Z]|\!|\"|\#|\$|\%|\&|\'|\@|\[|\\|\]|\_|\{|\||\}|\~")
+                    (re-seq #"EXIT|ENV|DATA[^\:]*?\:|REM|NEW|CLEAR|LIST|RUN|LOAD|SAVE|LET|AND|OR|INT|SIN|ATN|LEN|VAL|MID\$|STR\$|CHR\$|ASC|GOTO|ON|IF|THEN|FOR|TO|STEP|NEXT|GOSUB|RETURN|END|INPUT|READ|RESTORE|PRINT|\<\=|\>\=|\=\>|\<\>|\<|\>|\=|\(|\)|\?|\;|\:|\,|\+|\-|\*|\/|\^|\"[^\"]*\"|\d+\.\d+E[+-]?\d+|\d+\.E[+-]?\d+|\.\d+E[+-]?\d+|\d+E[+-]?\d+|\d+\.\d+|\d+\.|\.\d+|\.|\d+|[A-Z][A-Z0-9]*[\%\$]?|[A-Z]|\!|\"|\#|\$|\%|\&|\'|\@|\[|\\|\]|\_|\{|\||\}|\~")
                     (map #(if (and (> (count %) 4) (= "DATA" (subs % 0 4))) (clojure.string/split % #":") [%]))
                     (map first)
                     (remove nil?)
@@ -631,6 +631,7 @@
           INT (if (not (number? operando)) (dar-error 163 nro-linea) (int operando))
           ASC (if (not (string? operando)) (dar-error 163 nro-linea) (int (first operando)))
           SIN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/sin operando))
+          VAL (if (not (string? operando)) (dar-error 163 nro-linea) (Double/parseDouble operando))
           ATN (if (not (number? operando)) (dar-error 163 nro-linea) (Math/atan operando)))))
   ([operador operando1 operando2 nro-linea]
     (if (or (nil? operando1) (nil? operando2))
@@ -665,6 +666,9 @@
           <= (if (and (number? operando1) (number? operando2))
                 (if (<= operando1 operando2) 1 0)
                 (dar-error 163 nro-linea))
+          => (if (and (number? operando1) (number? operando2))
+                (if (>= operando1 operando2) 1 0)
+                (dar-error 163 nro-linea))
           OR (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (not (and (not= op1 0) (not= op2 0))) 0 1))
           AND (let [op1 (+ 0 operando1), op2 (+ 0 operando2)] (if (and (not= op1 0) (not= op2 0)) 1 0))
           MID$ (if (< operando2 1)
@@ -696,7 +700,7 @@
 (defn palabra-reservada? [x]
   (let [palabras-reservadas (list 'EXIT 'ENV 'DATA 'REM 'NEW 'CLEAR 'LIST 'RUN 'LOAD 'SAVE 'LET 'INT 'SIN 'ATN 'LEN 
                                   'MID$ 'MID3$ 'STR$ 'CHR$ 'ASC 'GOTO 'ON 'IF 'THEN 'FOR 'STEP 'NEXT 'GOSUB 'RETURN 
-                                  'END 'INPUT 'READ 'RESTORE 'PRINT 'OR 'AND)]
+                                  'END 'INPUT 'READ 'RESTORE 'PRINT 'OR 'AND 'VAL)]
   (if (some (partial = x) palabras-reservadas) true false))
 )
 
@@ -711,7 +715,7 @@
 ; false
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn operador? [x]
-  (let [operadores (list 'AND 'OR '<= '>= '< '> '= '<> '+ '- '* '/ '? (symbol "^"))]
+  (let [operadores (list 'AND 'OR '<= '>= '=> '< '> '= '<> '+ '- '* '/ '? (symbol "^"))]
   (if (some (partial = x) operadores) true false))
 )
 
@@ -1139,7 +1143,7 @@
 )
 
 (defn precedencia [token]
-  (let [precedencia-4 (list '= '<> '< '> '<= '>=)
+  (let [precedencia-4 (list '= '<> '< '> '<= '>= '=>)
         precedencia-5 (list '+ '-) 
         precedencia-6 (list '* '/)
         precedencia-nil (list (symbol "(") (symbol ")"))]
@@ -1173,7 +1177,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn aridad [token]
-  (let [aridad-1 (list 'NOT '-u 'LOAD 'SAVE 'PRINT 'REM 'LET 'GOSUB 'GOTO 'IF 'ON 'ATN 'INT 'SIN 'LEN 'ASC 'CHR$ 'STR$)
+  (let [aridad-1 (list 'NOT '-u 'LOAD 'SAVE 'PRINT 'REM 'LET 'GOSUB 'GOTO 'IF 'ON 'ATN 'INT 'SIN 'LEN 'ASC 'CHR$ 'STR$ 'VAL)
         aridad-2 (list 'OR 'AND (symbol "^") 'MID$)
         aridad-3 (list 'MID3$)]
   (cond
